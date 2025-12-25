@@ -1,7 +1,10 @@
 # main.py
 from src.config import config
-from src.discord.bot import run_bot
+import src.discord_bot.bot as bot
 from src.storage.database import init_db
+from src.leaderboard_tracker.tracker import LeaderboardTracker
+from src.room_tracker.tracker import RoomTracker
+
 
 def main():
     """
@@ -11,18 +14,26 @@ def main():
 
     # Check for required configuration
     if not all([config.DISCORD_TOKEN]):
-        print("DISCORD_TOKEN is not set. Please check your .env file or environment variables.")
+        print(
+            "DISCORD_TOKEN is not set. Please check your .env file or environment variables."
+        )
         return
 
     print("Configuration loaded successfully.")
-    
+
     # Initialize the database
     print("Initializing database...")
     init_db()
     print("Database initialized.")
 
     # Run the bot
-    run_bot()
+    bot.start()
+
+    leaderboard_tracker = LeaderboardTracker()
+    room_tracker = RoomTracker()
+
+    leaderboard_tracker.start()
+    room_tracker.start()
 
     print("Bot stopped.")
 

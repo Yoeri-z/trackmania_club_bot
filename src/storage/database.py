@@ -1,19 +1,20 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.config import config
 from src.storage.models import Base
 
-# Create the engine
-engine = create_engine(config.DATABASE_URL)
+# Create the engine with a hardcoded SQLite database path
+engine = create_engine("sqlite+pysqlite:///:memory:", echo=True)
 
 # Create a configured "Session" class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def init_db():
     """
     Initializes the database by creating all tables.
     """
     Base.metadata.create_all(bind=engine)
+
 
 def get_db():
     """

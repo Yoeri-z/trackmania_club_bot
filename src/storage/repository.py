@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
+from sqlalchemy import func, and_
+from sqlalchemy.orm import Session, aliased
 from typing import Type, TypeVar, Generic, List, Optional
-from src.storage.models import Base, Player, Map, Leaderboard, RoomInfo
+from src.storage.models import Base, Player, Map, LeaderboardEntry, RoomInfo
 from src.storage.database import SessionLocal
 
 # Base is a type, python does not see that.
@@ -23,6 +24,15 @@ class BaseRepository(Generic[T]):
         self.session.add(instance)
         self.session.commit()
         self.session.refresh(instance)
+        return instance
+
+    def upsert(self, unique_filters: dict, **kwargs) -> T:
+        instance = self.session.query(self.model).filter_by(**unique_filters).first()
+        if instance:
+            instance = self.update(instance.id, **kwargs)
+        else:
+            instance = self.create(**kwargs)
+
         return instance
 
     def update(self, id: any, **kwargs) -> Optional[T]:
@@ -53,18 +63,53 @@ class MapRepository(BaseRepository[Map]):
     def __init__(self, session: Session):
         super().__init__(session, Map)
 
+    def get_tracked(self) -> list[Map]:
+        return self.session.query(Map).filter(Map.channel_id.isnot(None)).all()
 
-class LeaderboardRepository(BaseRepository[Leaderboard]):
+
+class LeaderboardRepository(BaseRepository[LeaderboardEntry]):
     def __init__(self, session: Session):
-        super().__init__(session, Leaderboard)
+        super().__init__(session, LeaderboardEntry)
 
-    def get_latest_for_map(self, map_id: str) -> Optional[Leaderboard]:
+    def get_latest_for_map(self, map_id: str) -> list[LeaderboardEntry]:
+        subq = (
+            self.session.query(
+                LeaderboardEntry.player_id,
+                func.max(LeaderboardEntry.fetched_at).label("latest"),
+            )
+            .filter(LeaderboardEntry.map_id == map_id)
+            .group_by(LeaderboardEntry.player_id)
+            .subquery()
+        )
+
         return (
-            self.session.query(Leaderboard)
-            .filter_by(map_id=map_id)
-            .order_by(Leaderboard.fetched_at.desc())
+            self.session.query(LeaderboardEntry)
+            .join(
+                subq,
+                and_(
+                    LeaderboardEntry.player_id == subq.c.player_id,
+                    LeaderboardEntry.fetched_at == subq.c.latest,
+                ),
+            )
+            .order_by(LeaderboardEntry.fetched_at.desc())
+            .limit(100)
+            .all()
+        )
+
+    def compare(
+        self, new_entry: LeaderboardEntry
+    ) -> tuple[LeaderboardEntry, LeaderboardEntry | None] | None:
+        # TODO: Check if there is an old entry
+        old_entry = (
+            self.session.query(LeaderboardEntry)
+            .filter(LeaderboardEntry.player_id == new_entry.player_id)
             .first()
         )
+
+        if not old_entry or new_entry.score >= old_entry.score:
+            return None
+        else:
+            return new_entry, old_entry
 
 
 class RoomInfoRepository(BaseRepository[RoomInfo]):
