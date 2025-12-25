@@ -4,8 +4,6 @@ This project is still under development and not ready for use yet.
 
 Welcome! This project is a Discord bot designed specifically for Trackmania clubs. It helps you keep your Discord community engaged by providing real-time leaderboard updates, player information, and club room status directly in your server.
 
-Even if you're new to coding, this guide will walk you through setting it up step-by-step.
-
 ## Core Features
 
 - **Leaderboard Tracking:** Automatically fetches leaderboard data and posts notifications for new personal bests in your club.
@@ -17,12 +15,11 @@ Even if you're new to coding, this guide will walk you through setting it up ste
 
 ## Getting Started
 
-Before you begin, you need to decide how you want to run the bot. There are four options, ordered from easiest to most advanced:
+Before you begin, you need to decide how you want to run the bot. There are three options, ordered to approximate difficulty:
 
 1.  **Managed Hosting:** The easiest, hands-off option.
-2.  **Run with a Public Docker Image:** The simplest self-hosted option. No code required!
-3.  **Run with Python:** A great way to learn the basics of running a code project on your own computer.
-4.  **Run with Docker (Build from source):** A more advanced method that lets you build the Docker image yourself.
+2.  **Run with a Public Docker Image:** Easily host the bot using the public docker image.
+3.  **Run with Python:** Run the code manually on your own server or computer.
 
 ---
 
